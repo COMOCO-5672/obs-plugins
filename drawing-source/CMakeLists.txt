@@ -1,0 +1,40 @@
+project(drawing-source)
+
+find_package(OpenGL REQUIRED)
+include_directories(${OPENGL_INCLUDE_DIR})
+
+if(MSVC)
+	set(drawing-source_PLATFORM_DEPS
+		w32-pthreads)
+endif()
+
+set(drawing-source_SOURCES
+	drawing-source.cpp
+	source-manager.cpp
+	zmath.c)
+	
+set(drawing-source_HEADERS
+	drawing-source.h
+	source-manager.h
+	zmath.h)
+
+# if(WIN32)
+	# set(MODULE_DESCRIPTION "OBS document module")
+	# #configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in doc-source.rc)
+	# list(APPEND drawing-source_SOURCES)
+	# list(APPEND drawing-source_HEADERS)
+# endif()
+
+add_library(drawing-source MODULE
+	${drawing-source_SOURCES})
+target_link_libraries(drawing-source
+	libobs
+	${drawing-source_PLATFORM_DEPS})
+set_target_properties(drawing-source PROPERTIES FOLDER "plugins")
+
+if(WIN32)
+	install_obs_plugin_with_data(drawing-source data)
+else()
+	setup_plugin_target(drawing-source)
+endif(WIN32)
+
