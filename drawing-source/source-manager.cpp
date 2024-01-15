@@ -10,18 +10,7 @@ KeySource::~KeySource()
 {
     for (const auto &page : m_page_list_) {
         obs_enter_graphics();
-        if (page.second->tmp_render)
-            gs_texrender_destroy(page.second->tmp_render);
-
-        if (page.second->texrender)
-            gs_texrender_destroy(page.second->texrender);
-
-        if (page.second->copy_texture)
-            gs_texture_destroy(page.second->copy_texture);
-
-        if (page.second->point_array)
-            z_drop_fpoint_array(page.second->point_array);
-
+        release_draw_texture(page.second);
         obs_leave_graphics();
     }
 }
@@ -32,6 +21,7 @@ bool KeySource::AddPage(int32_t page_index)
     if (find_page_item == m_page_list_.end()) {
         const auto texture = new gs_drawing_texture();
         texture->texrender = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+        texture->point.is_frist_draw = true;
         const bool insert_ret = m_page_list_.insert(std::pair(page_index, texture)).second;
         if (!insert_ret) {
             gs_texrender_destroy(texture->texrender);
@@ -48,8 +38,9 @@ bool KeySource::RemovePage(int32_t page_index)
     const auto find_page_item = m_page_list_.find(page_index);
     if (find_page_item == m_page_list_.end())
         return true;
-
-    return m_page_list_.erase(find_page_item)->second;
+    // release_draw_texture(find_page_item->second);
+    m_page_list_.erase(find_page_item);
+    return true;
 }
 
 bool KeySource::SetCurrentPage(int32_t page_index)
@@ -93,6 +84,38 @@ int32_t KeySource::GetPageSize()
 int32_t KeySource::GetCurrentPage()
 {
     return m_cur_page_idx_;
+}
+
+void KeySource::release_draw_texture(gs_drawing_texture *texture)
+{
+    obs_enter_graphics();
+    if (texture->tmp_render) {
+        gs_texrender_destroy(texture->tmp_render);
+        texture->tmp_render = nullptr;
+    }
+
+    if (texture->texrender) {
+        gs_texrender_destroy(texture->texrender);
+        texture->texrender = nullptr;
+    }
+
+    if (texture->copy_texture) {
+        gs_texture_destroy(texture->copy_texture);
+        texture->copy_texture = nullptr;
+    }
+
+    if (texture->image_texture) {
+        gs_texture_destroy(texture->image_texture);
+        texture->image_texture = nullptr;
+    }
+
+    if (texture->point_array) {
+        z_drop_fpoint_array(texture->point_array);
+        texture->point_array = nullptr;
+    }
+    texture->render_text = false;
+    delete texture;
+    obs_leave_graphics();
 }
 
 // source manager
@@ -209,12 +232,14 @@ int32_t SourceManager::GetLineWidth()
     return m_line_width_;
 }
 
-void SourceManager::SetCurrentKey(std::string &key)
+void SourceManager::SetCurrentKey(const std::string &key)
 {
     m_current_key_ = key;
     const auto find_item = m_draw_list.find(m_current_key_);
-    if (find_item == m_draw_list.end())
+    if (find_item == m_draw_list.end()) {
         m_current_idx_ = 0;
+        return;
+    }
 
     m_current_idx_ = find_item->second->GetCurrentPage();
 }

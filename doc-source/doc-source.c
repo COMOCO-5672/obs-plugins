@@ -146,17 +146,17 @@ static void doc_source_render(void *data, gs_effect_t *effect)
     struct document_source_t *context = data;
     bool need_create_tex = false, reset_tex = false;
 
-    if (context) {
-        reset_tex = !context->document_tex.texture || (context->document_tex.width != context->frame_cache->width
-            || context->document_tex.height != context->frame_cache->height);
-    }
+    if (!context)
+        return;
+
+    pthread_mutex_lock(&context->mutex);
+    reset_tex = !context->document_tex.texture || (context->document_tex.width != context->frame_cache->width
+        || context->document_tex.height != context->frame_cache->height);
 
     if (reset_tex && context->frame_cache) {
         if (context->document_tex.texture) {
             gs_texture_destroy(context->document_tex.texture);
         }
-
-        pthread_mutex_lock(&context->mutex);
 
         context->document_tex.texture = gs_texture_create(context->frame_cache->width
             , context->frame_cache->height
@@ -164,10 +164,8 @@ static void doc_source_render(void *data, gs_effect_t *effect)
             , 1
             , NULL
             , 0);
-
-        pthread_mutex_unlock(&context->mutex);
     }
-
+    pthread_mutex_unlock(&context->mutex);
     if (!context->document_tex.texture)
         return;
 
@@ -258,7 +256,7 @@ static obs_missing_files_t *doc_source_missingfiles(void *data)
     return files;
 }
 
-static void doc_source_set_video_frame(void *data, struct obs_source_frame *frame)
+static void doc_source_set_video_frame(void *data, int x, int y, struct obs_source_frame *frame)
 {
     struct document_source_t *context = data;
     if (!context || !frame)

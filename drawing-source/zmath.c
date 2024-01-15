@@ -6,6 +6,12 @@
 #include "zmath.h"
 
 #define z_malloc_struct(t) (t*)calloc(1, sizeof(t))
+
+#ifndef WIN32
+    #define min(a,b) (((a)<(b))?(a):(b))
+    #define max(a,b) (((a)>(b))?(a):(b))
+#endif
+
 static void* z_malloc_array(unsigned int count, unsigned int size);
 static void* z_resize_array(void *p, size_t count, size_t size);
 
@@ -118,7 +124,7 @@ void z_fpoint_arraylist_append(z_fpoint_arraylist *l, z_fpoint_array *a) {
 z_fpoint_array *z_fpoint_arraylist_append_new(z_fpoint_arraylist *l, float max, float min) {
     z_fpoint_array *a = z_new_fpoint_array(24, max, min);
     z_fpoint_arraylist_append(l, a);
-    printf("append new points array\n");
+    //printf("append new points array\n");
     return a; 
 }
 
@@ -133,25 +139,6 @@ void z_fpoint_arraylist_removelast(z_fpoint_arraylist *l) {
 
     c->n = NULL;
     l->end = c; 
-}
-
-z_fpoint_arraylist * clone(z_fpoint_arraylist * l)
-{
-	z_fpoint_arraylist * dst = z_new_fpoint_arraylist();
-	z_fpoint_arraylist_node *node = l->first;
-	while (node)
-	{
-		z_fpoint_array *array = node->a;
-		z_fpoint_array *newArray = z_fpoint_arraylist_append_new(dst, 1.0f, 0.18f);
-		for (int i = 0; i < array->len; ++i)
-		{
-			z_point p;
-			p.x = array->point->p.x;
-			p.y = array->point->p.y;
-			z_insert_point(newArray, p);
-		}
-	}
-	return dst;
 }
 
 z_fpoint_array *z_auto_increase_fpoints_array(z_fpoint_array *a) {
@@ -169,7 +156,7 @@ float z_distance(z_point b, z_point e){
 }
 
 void  z_fpoint_add_xyw(z_fpoint_array *a, float x, float y, float w)  {
-    if( !a || (a->point[a->len-1].p.x==x && a->point[a->len-1].p.y==y) ) return;
+    if( !a || (a->len>0 && (a->point[a->len-1].p.x==x && a->point[a->len-1].p.y==y)) ) return;
     
     if(a->len==a->cap) 
         z_auto_increase_fpoints_array(a);
@@ -236,7 +223,7 @@ float z_linewidth(z_ipoint b, z_ipoint e, float bwidth, float step) {
 	//printf("max_dif:%f\n", max_dif);
     if( w<0.05f ) w = 0.05f;
     if( fabs( w-bwidth ) > max_dif ) {
-		printf("prev width:%f\n", bwidth);
+		//printf("prev width:%f\n", bwidth);
         if( w > bwidth )
             w = bwidth + max_dif;
         else
@@ -282,10 +269,10 @@ float z_insert_point(z_fpoint_array *arr, z_point point) {
     z_fpoint tmppoint = arr->point[len-1];
     z_fpoint_add(points, tmppoint);
 
-	//for (int i = 0; i < arr->len; ++i)
-	//{
-	//	//printf("array %p: x(%f)\t y(%f)\t w(%f)\n", arr->point, arr->point[i].p.x, arr->point[i].p.y, arr->point[i].w);
-	//}
+//	for (int i = 0; i < arr->len; ++i)
+//	{
+//		printf("array %p: x(%f)\t y(%f)\t w(%f)\n", arr->point, arr->point[i].p.x, arr->point[i].p.y, arr->point[i].w);
+//	}
 
 
     if( 1==len ) {

@@ -8,19 +8,28 @@
 #include "obs-source.h"
 #include "drawing-source.h"
 #include "zmath.h"
+#include <mutex>
 
 struct gs_drawing_texture {
     gs_texrender_t *texrender;
     gs_texrender_t *tmp_render;
     gs_texture_t  *copy_texture;
 
+    gs_texture_t *image_texture;
     z_fpoint_array *point_array;
+    bool render_text;
 
     enum gs_color_format format;
     uint32_t width;
     uint32_t height;
 
-    draw_line line;
+    std::mutex mutex;
+
+    union {
+        draw_line_t line;
+        draw_rect_t rect;
+        draw_point_t point;
+    };
 };
 
 class KeySource {
@@ -35,6 +44,9 @@ public:
     gs_drawing_texture *GetPageIndexTexture(int32_t page_index);
     int32_t GetPageSize();
     int32_t GetCurrentPage();
+
+private:
+    void release_draw_texture(gs_drawing_texture* texture);
 
 private:
     int32_t m_cur_page_idx_ = 0;
@@ -70,7 +82,7 @@ public:
     void SetLineWidth(int32_t width);
     int32_t GetLineWidth();
 
-    void SetCurrentKey(std::string &key);
+    void SetCurrentKey(const std::string &key);
     std::string GetCurrentKey();
 
     void SetCurrentPage(int32_t page_index);

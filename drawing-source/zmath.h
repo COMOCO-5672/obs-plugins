@@ -68,9 +68,6 @@ void z_fpoint_arraylist_append(z_fpoint_arraylist *l, z_fpoint_array *a);
 z_fpoint_array *z_fpoint_arraylist_append_new(z_fpoint_arraylist *l, float maxwidth, float minwidth);
 void z_fpoint_arraylist_removelast(z_fpoint_arraylist *l);
 
-z_fpoint_arraylist *clone(z_fpoint_arraylist *l);
-
-
 float z_movespeed(z_ipoint s, z_ipoint e);
 float z_distance(z_point s, z_point e);
 void  z_fpoint_add_xyw(z_fpoint_array *a, float x, float y, float w);
